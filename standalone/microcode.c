@@ -16,6 +16,7 @@
  * General Public License version 2 for more details.
  */
 
+#include <asm.h>
 #include <bda.h>
 #include <elf.h>
 #include <mbi.h>
@@ -39,22 +40,6 @@ enum {
   MSR_UPDATE_MC      = 0x79,
   MSR_SIGNATURE_ID   = 0x8b,
 };
-
-static inline void msr_write(unsigned msr, uint64_t value)
-{
-  uint32_t const low = value, high = value >> 32;
-
-  asm volatile ("wrmsr" :: "a" (low), "d" (high), "c" (msr));
-}
-
-static inline uint64_t msr_read(unsigned msr)
-{
-  uint32_t high, low;
-
-  asm volatile ("rdmsr" : "=d" (high), "=a" (low) : "c" (msr));
-
-  return ((0ULL + high) << 32) | low;
-}
 
 struct cpuid_eax {
   unsigned stepping:4;
@@ -81,11 +66,6 @@ struct microcode
   uint32_t reserved[3];
   uint8_t  data[];
 } __attribute__((packed));
-
-static void inline cpuid(unsigned *eax, unsigned *ebx, unsigned *ecx, unsigned *edx)
-{
-  asm volatile ("cpuid" : "+a" (*eax), "+d" (*edx), "+b" (*ebx), "+c"(*ecx) :: "memory");
-}
 
 uint64_t signature_info(unsigned *eax)
 {
@@ -291,10 +271,10 @@ void apply_microcode(struct microcode const * const microcode,
 
   if (!cpus_wait_for)
     return;
-
+#if 0
   printf(" - %u CPUs%s, patched 1 BSP & %u AP ...\n", cpus_detected,
          (hyperthreading() && (hyperthread_per_cpu > 1)) ? " (with hyperthreads)" : "", cpus_wait_for);
-
+#endif
   /* wait for patched AP CPUs */
   while (*ap_cpus_booted < cpus_wait_for)
     asm volatile("pause":::"memory");
@@ -391,6 +371,8 @@ int main(uint32_t const magic, void *multiboot)
     printf("Unknown multiboot magic value. Bye.\n");
     return 1;
   }
+
+  printf("serial value %x\n", get_bios_data_area()->com_port[0]);
 
   apply_microcode(microcode, rsdp);
 

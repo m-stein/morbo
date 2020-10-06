@@ -36,6 +36,11 @@ freestanding_env = conf.Finish()
 
 fenv = freestanding_env.Clone()
 
+fenv16 = Environment()
+fenv16['CCFLAGS']  = "-Os -minline-all-stringops -m16 -march=pentium -mtune=core2 -pipe -ffreestanding -nostdlib -Wno-multichar -Wall"
+fenv16['CCFLAGS'] += " -ffunction-sections -fomit-frame-pointer -mregparm=3 "
+fenv16['CPPPATH'] = ["../include", "include/"]
+
 stand = fenv.StaticLibrary('stand',
                            [ 'elf.c',
                              'hexdump.c',
@@ -74,6 +79,10 @@ tinf = fenv.StaticLibrary('tinf',
                             'crc32.c',
                             ])
 
+realmode = fenv16.StaticLibrary('realmode',
+                                [ 'cpu.cc'
+                                  ])
+
 fenv['CPPPATH'] = ["../include", "include/"]
 fenv['LIBPATH'] = ['.']
 
@@ -98,7 +107,7 @@ DoInstall(fenv.Program('morbo',
                        [ 'crc16.c',
                          'morbo.c',
                          'ohci.c' ],
-                       LIBS=['stand', 'tinf']))
+                       LIBS=['stand', 'tinf', 'realmode']))
 
 # Zapp
 
@@ -106,39 +115,39 @@ DoInstall(fenv.Program('zapp',
                        [ 'acpi.c',
                          'zapp.c',
                          ],
-                       LIBS=['stand', 'tinf']))
+                       LIBS=['stand', 'tinf', 'realmode']))
 
 # Bender
 
 DoInstall(fenv.Program('bender',
                        [ 'bender.c',
                          ],
-                       LIBS=['stand', 'tinf']))
+                       LIBS=['stand', 'tinf', 'realmode']))
 
 # Unzip
 
 DoInstall(fenv.Program('unzip',
                        [ 'unzip.c',
                          ],
-                       LIBS=['stand', 'tinf']))
+                       LIBS=['stand', 'tinf', 'realmode']))
 
 # Farnsworth
 
 DoInstall(fenv.Program('farnsworth',
                        [ 'farnsworth.c',
                          ],
-                       LIBS=['stand', 'tinf']))
+                       LIBS=['stand', 'tinf', 'realmode']))
 
 # Performance tests
 
 DoInstall(fenv.Program('basicperf',
                        [ 'basicperf.c' ],
-                       LIBS=['stand']))
+                       LIBS=['stand', 'realmode']))
 
 # Microcode
 
 DoInstall(fenv_microcode.Program('microcode',
                                  [ 'microcode.c',
                                    'acpi.c' ],
-                                 LIBS=['stand', 'tinf']))
+                                 LIBS=['stand', 'tinf', 'realmode']))
 # EOF
