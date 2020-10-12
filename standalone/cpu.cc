@@ -25,8 +25,9 @@ inline void serial_send(char const x)
        LSR_TMIT_HOLD_EMPTY = 1u << 5
   };
 
-  unsigned uart_addr = 0 ? 0x1808 /* X201 */ : 0x3f8 /* Qemu && Macho */;
-#if 1
+//  unsigned uart_addr = 0 ? 0x1808 /* X201 */ : 0x3f8 /* Qemu && Macho */;
+  unsigned uart_addr = 0x3060; /* T490 */
+#if 0
   while (!(inb (uart_addr + LSR) & LSR_TMIT_HOLD_EMPTY)) {
 //    asm volatile ("pause");
   }

@@ -241,8 +241,8 @@ void apply_microcode(struct microcode const * const microcode,
          match ? "match" : " cpuid mismatch - no patching");
 
   /* XXX we may need to check per core, since IDs may differ, e.g. servers */
-  if (!match)
-    return;
+//  if (!match)
+//    return;
 
   /* apply microcode update to this CPU -  bootstrap processor (BSP) */
   msr_write(MSR_UPDATE_MC, (uintptr_t)microcode->data);
