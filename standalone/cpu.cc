@@ -288,14 +288,25 @@ struct Cpuid
 ALWAYS_INLINE
 static void configure_hardware_pstates()
 {
-    char const* eeo_str { "" };
-    char const* hwp_str { "" };
-    char const* hwp_irq_str { "" };
-    char const* hwp_epp_str { "" };
-    char const* hwp_epb_str { "" };
-    bool print_hwp_cfg { false };
-
     Cpuid const cpuid { };
+
+    serial_send('h');
+    serial_send('w');
+    serial_send('p');
+    serial_send(' ');
+    serial_send('c');
+    serial_send('o');
+    serial_send('n');
+    serial_send('f');
+    serial_send('i');
+    serial_send('g');
+    serial_send(':');
+
+    serial_send(' ');
+    serial_send('e');
+    serial_send('e');
+    serial_send('o');
+    serial_send('=');
 
     if (cpuid.vendor() == Cpuid::Vendor::INTEL &&
         cpuid.family_id() == 6 &&
@@ -303,64 +314,83 @@ static void configure_hardware_pstates()
         cpuid.hardware_coordination_feedback_cap())
     {
         Cpu_msr::energy_efficiency_optimization(false);
-        eeo_str = " eeo=0";
-        print_hwp_cfg = true;
+        serial_send('0');
+
+    } else {
+
+        serial_send('n');
+        serial_send('a');
     }
+
+    serial_send(' ');
+    serial_send('i');
+    serial_send('r');
+    serial_send('q');
+    serial_send('=');
+
+    if (cpuid.hwp() && cpuid.hwp_notification()) {
+
+        Cpu_msr::hwp_notification_irqs(false);
+        serial_send('0');
+
+    } else {
+
+        serial_send('n');
+        serial_send('a');
+    }
+
+    serial_send(' ');
+    serial_send('h');
+    serial_send('w');
+    serial_send('p');
+    serial_send('=');
 
     if (cpuid.hwp()) {
-        if (cpuid.hwp_notification()) {
-            Cpu_msr::hwp_notification_irqs(false);
-            hwp_irq_str = " hwp_irq=0";
-            print_hwp_cfg = true;
-        }
+
         Cpu_msr::hardware_pstates(true);
-        hwp_str = " hwp=1";
-        print_hwp_cfg = true;
+        serial_send('1');
 
-        if (cpuid.hwp_energy_perf_pref()) {
-            Cpu_msr::hwp_energy_perf_pref(Cpu_msr::Hwp_epp::PERFORMANCE);
-            hwp_epp_str = " hwp_epp=0";
-            print_hwp_cfg = true;
-        }
-        if (cpuid.hwp_energy_perf_bias()) {
-            Cpu_msr::hwp_energy_perf_bias(Cpu_msr::Hwp_epb::PERFORMANCE);
-            hwp_epb_str = " hwp_epb=0";
-            print_hwp_cfg = true;
-        }
+    } else {
+
+        serial_send('n');
+        serial_send('a');
     }
 
-    if (cpuid.vendor() != Cpuid::Vendor::INTEL) {
-        serial_send('u');
+    serial_send(' ');
+    serial_send('e');
+    serial_send('p');
+    serial_send('p');
+    serial_send('=');
+
+    if (cpuid.hwp() && cpuid.hwp_energy_perf_pref()) {
+
+        Cpu_msr::hwp_energy_perf_pref(Cpu_msr::Hwp_epp::PERFORMANCE);
+        serial_send('0');
+
+    } else {
+
         serial_send('n');
-        serial_send('k');
-        serial_send('n');
-        serial_send('o');
-        serial_send('w');
-        serial_send('n');
-        serial_send('\n');
+        serial_send('a');
     }
 
-    if (cpuid.vendor() == Cpuid::Vendor::INTEL) {
-        serial_send('I');
+    serial_send(' ');
+    serial_send('e');
+    serial_send('p');
+    serial_send('b');
+    serial_send('=');
+
+    if (cpuid.hwp() && cpuid.hwp_energy_perf_bias()) {
+
+        Cpu_msr::hwp_energy_perf_bias(Cpu_msr::Hwp_epb::PERFORMANCE);
+        serial_send('0');
+
+    } else {
+
         serial_send('n');
-        serial_send('t');
-        serial_send('e');
-        serial_send('l');
-        serial_send('\n');
+        serial_send('a');
     }
 
-    if (print_hwp_cfg) {
-        serial_send('!');
-        serial_send('\n');
-    }
-#if 0
-    if (print_hwp_cfg) {
-        trace (TRACE_CPU, "HWP config for core %x.%x.%x:%s%s%s%s%s",
-               Cpu::package[Cpu::id], Cpu::core[Cpu::id],
-               Cpu::thread[Cpu::id], eeo_str, hwp_str, hwp_irq_str,
-               hwp_epp_str, hwp_epb_str);
-    }
-#endif
+    serial_send('\n');
 }
 
 extern "C" void callme16()
