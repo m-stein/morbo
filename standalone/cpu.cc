@@ -4,10 +4,11 @@ typedef uint32_t uint32;
 typedef uint32_t mword; /* XXX */
 typedef uint64_t uint64;
 
-#define ALWAYS_INLINE       __attribute__((always_inline))
+#define ALWAYS_INLINE __attribute__((always_inline)) inline
 
 struct Cpu
 {
+    ALWAYS_INLINE
     static void cpuid(uint32 const idx, uint32 &a, uint32 &b, uint32 &c, uint32 &d)
     {
         a = idx;
@@ -17,7 +18,7 @@ struct Cpu
 };
 
 ALWAYS_INLINE
-inline void serial_send(char const x)
+void serial_send(char const x)
 {
   enum
   {
@@ -53,7 +54,7 @@ struct Cpu_msr
 
     template <typename T>
     ALWAYS_INLINE
-    static inline T read (Register msr)
+    static T read (Register msr)
     {
         mword h, l;
         asm volatile ("rdmsr" : "=a" (l), "=d" (h) : "c" (msr));
@@ -62,7 +63,7 @@ struct Cpu_msr
 
     template <typename T>
     ALWAYS_INLINE
-    static inline void write (Register msr, T val)
+    static void write (Register msr, T val)
     {
         asm volatile (
             "wrmsr" : :
@@ -71,16 +72,19 @@ struct Cpu_msr
             "c" (msr));
     }
 
+    ALWAYS_INLINE
     static void hwp_notification_irqs(bool on)
     {
         write<uint64>(MSR_HWP_INTERRUPT, on ? 1 : 0);
     }
 
+    ALWAYS_INLINE
     static void hardware_pstates(bool on)
     {
         write<uint64>(MSR_PM_ENABLE, on ? 1 : 0);
     }
 
+    ALWAYS_INLINE
     static void energy_efficiency_optimization(bool on)
     {
         enum { DEEO_SHIFT = 20 };
@@ -98,6 +102,7 @@ struct Cpu_msr
         POWER_SAVING = 255,
     };
 
+    ALWAYS_INLINE
     static void hwp_energy_perf_pref(Hwp_epp epp)
     {
         enum { EPP_SHIFT = 24 };
@@ -115,6 +120,7 @@ struct Cpu_msr
         POWER_SAVING = 15,
     };
 
+    ALWAYS_INLINE
     static void hwp_energy_perf_bias(Hwp_epb epb)
     {
         enum { EPB_SHIFT = 0 };
@@ -135,10 +141,12 @@ struct Cpuid
     uint32 ecx[MAX_LEAF_IDX];
     uint32 edx[MAX_LEAF_IDX];
 
+    ALWAYS_INLINE
     void init_leaf(unsigned idx) {
         Cpu::cpuid (idx, eax[idx], ebx[idx], ecx[idx], edx[idx]);
     }
 
+    ALWAYS_INLINE
     Cpuid() {
         Cpu::cpuid (0, eax[0], ebx[0], ecx[0], edx[0]);
         for (unsigned idx = 1; idx <= eax[0] && idx < MAX_LEAF_IDX; idx++) {
@@ -183,6 +191,7 @@ struct Cpuid
     using Family_id = uint32;
     enum { FAMILY_ID_UNKNOWN = ~static_cast<uint32>(0) };
 
+    ALWAYS_INLINE
     Family_id family_id() const
     {
         if (eax[0] < 1) {
@@ -206,6 +215,7 @@ struct Cpuid
         UNKNOWN,
     };
 
+    ALWAYS_INLINE
     Model model() const
     {
         if (eax[0] < 1) {
@@ -229,6 +239,7 @@ struct Cpuid
         }
     }
 
+    ALWAYS_INLINE
     bool hwp() const
     {
         if (eax[0] < 6) {
@@ -237,6 +248,7 @@ struct Cpuid
         return ((eax[6] >> 7) & 1) == 1;
     }
 
+    ALWAYS_INLINE
     bool hwp_notification() const
     {
         if (eax[0] < 6) {
@@ -245,6 +257,7 @@ struct Cpuid
         return ((eax[6] >> 8) & 1) == 1;
     }
 
+    ALWAYS_INLINE
     bool hwp_energy_perf_pref() const
     {
         if (eax[0] < 6) {
@@ -253,6 +266,7 @@ struct Cpuid
         return ((eax[6] >> 10) & 1) == 1;
     }
 
+    ALWAYS_INLINE
     bool hardware_coordination_feedback_cap() const
     {
         if (eax[0] < 6) {
@@ -261,6 +275,7 @@ struct Cpuid
         return ((ecx[6] >> 0) & 1) == 1;
     }
 
+    ALWAYS_INLINE
     bool hwp_energy_perf_bias() const
     {
         if (eax[0] < 6) {
@@ -270,6 +285,7 @@ struct Cpuid
     }
 };
 
+ALWAYS_INLINE
 static void configure_hardware_pstates()
 {
     char const* eeo_str { "" };
